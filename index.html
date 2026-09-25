@@ -12,14 +12,14 @@
 <link rel="icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 :root{
   --bar:#1D4F91; --bar-ink:#FFFFFF; --bar-soft:rgba(255,255,255,.14);
   --ribbon:#F4F6FA; --ribbon-line:#D3DAE5; --ribbon-hover:#E4EAF3;
   --ws:#DCE1E8; --ui-ink:#1C2430; --muted:#5A6577; --accent:#1D4F91; --accent-soft:#E2EBF8;
   --danger:#B3261E; --ok:#1E7A46; --field:#FFFFFF; --field-line:#BCC6D4;
-  --paper:#FFFFFF; --shadow:0 1px 3px rgba(20,30,50,.18),0 6px 18px rgba(20,30,50,.10);
+  --paper:#FFFFFF; --ink:#1B2A6B; --shadow:0 1px 3px rgba(20,30,50,.18),0 6px 18px rgba(20,30,50,.10);
   --font-ui:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
 }
@@ -41,6 +41,7 @@
   --danger:#F08A82; --ok:#6FCF97; --field:#1B2029; --field-line:#3C4655;
   --shadow:0 1px 3px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.35);
 }
+[hidden]{display:none!important}
 html,body{height:100%}
 body{margin:0;background:var(--ws);color:var(--ui-ink);font-family:var(--font-ui);font-size:14px;-webkit-text-size-adjust:100%;overflow:hidden}
 #app{display:flex;flex-direction:column;height:100%}
@@ -96,8 +97,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .menu button:hover{background:var(--accent-soft)}
 .menu small{display:block;font-family:var(--font-mono);color:var(--muted);font-size:11px;margin-top:2px;white-space:normal}
 
-/* Eingabezeile */
-.fx{background:var(--ribbon);border-bottom:1px solid var(--ribbon-line);padding:8px 16px;display:flex;flex-direction:column;gap:6px}
+/* Dock unten */
+.fx{background:var(--ribbon);border-top:1px solid var(--ribbon-line);padding:6px 16px;display:flex;flex-direction:column;gap:6px}
+.fx-row{display:flex;gap:8px;align-items:center}
+.write-btn{flex:none;background:var(--accent);color:#fff;border:0;border-radius:4px;padding:7px 12px;font-weight:600;cursor:pointer;white-space:nowrap}
+:root[data-theme="dark"] .write-btn{color:#0f1a2b}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .write-btn{color:#0f1a2b}}
 .sel{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;background:var(--accent-soft);border-radius:4px;padding:4px 6px}
 .sel b{font-weight:600;margin-right:6px}
 .sel button{border:1px solid var(--field-line);background:var(--field);border-radius:4px;padding:3px 10px;cursor:pointer;font-size:12px}
@@ -109,11 +114,23 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 :root[data-theme="dark"] .solve{color:#0f1a2b}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .solve{color:#0f1a2b}}
 .solve:hover{filter:brightness(1.08)}
-.symbols{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px}
+.symbols{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px;flex:1;min-width:0}
 .symbols button{flex:none;min-width:34px;height:30px;border:1px solid var(--field-line);background:var(--field);border-radius:4px;cursor:pointer;font-size:15px}
 .symbols button:hover{background:var(--accent-soft)}
 .msg{font-size:13px;line-height:1.4;color:var(--danger)}
 .msg.ok{color:var(--ok)}
+
+/* Schreibzone auf dem Papier */
+.zone{position:absolute;border:1.5px dashed rgba(47,111,214,.45);border-radius:6px;background:rgba(47,111,214,.035);transition:border-color .2s,background .2s}
+.zone:focus-within{border-color:rgba(47,111,214,.8);background:rgba(47,111,214,.06)}
+.zone textarea{display:block;width:100%;box-sizing:border-box;border:0;outline:none;background:transparent;resize:none;font-family:"Caveat","Bradley Hand","Segoe Print",cursive;font-weight:500;color:var(--ink);caret-color:var(--ink);padding:.15em .3em 1.9em;overflow:hidden}
+.zone textarea::placeholder{color:rgba(27,42,107,.38)}
+.zone-tag{position:absolute;top:-1.55em;left:0;font:500 11px/1 var(--font-ui);color:#2F6FD6;background:var(--paper);padding:2px 4px;border-radius:3px;white-space:nowrap}
+.zone-go{position:absolute;right:6px;bottom:6px;background:#1D4F91;color:#fff;border:0;border-radius:999px;padding:6px 14px;font:600 13px var(--font-ui);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.zone-go:hover{filter:brightness(1.1)}
+.zone.sink textarea{animation:sink .45s ease-in forwards}
+@keyframes sink{to{opacity:0;filter:blur(3px);transform:translateY(2px)}}
+.draw{transition:stroke-dashoffset var(--dur,1.6s) linear}
 
 /* Arbeitsfläche */
 .ws{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding-block:20px 40px;padding-inline:16px;position:relative}
@@ -130,7 +147,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .status .sp{flex:1}
 .status button{border:0;background:transparent;cursor:pointer;color:var(--muted);padding:2px 6px;border-radius:3px}
 .status button:hover{background:var(--ribbon-hover);color:var(--ui-ink)}
-.toast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%);background:var(--ui-ink);color:var(--ws);padding:9px 14px;border-radius:6px;font-size:13px;box-shadow:var(--shadow);z-index:40;display:flex;gap:12px;align-items:center;max-width:calc(100vw - 32px)}
+.toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:var(--ui-ink);color:var(--ws);padding:9px 14px;border-radius:6px;font-size:13px;box-shadow:var(--shadow);z-index:40;display:flex;gap:12px;align-items:center;max-width:calc(100vw - 32px)}
 .toast button{background:transparent;border:0;color:var(--ws);text-decoration:underline;cursor:pointer;font-weight:600}
 
 /* Hilfe */
@@ -246,26 +263,29 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     </div>
   </section>
 
-  <section class="fx" aria-label="Aufgabe eingeben">
+  <main class="ws" id="ws"><div class="pages" id="pages"></div></main>
+
+  <section class="fx" aria-label="Werkzeuge zum Schreiben">
     <div class="sel" id="selBar" hidden><b id="selName">Aufgabe</b>
       <button id="sEdit">Bearbeiten</button><button id="sUp">Nach oben</button><button id="sDown">Nach unten</button><button id="sDel" class="danger">Löschen</button><button id="sClose" aria-label="Auswahl aufheben">Fertig</button>
     </div>
-    <div class="fx-main">
-      <span class="fx-tag">fx</span>
-      <textarea id="inp" rows="1" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Aufgabe" placeholder="Aufgabe 1: geg.: a = 7 cm, b = 5 cm, γ = 40°  ges.: c, α, A"></textarea>
-      <button class="solve" id="solve">Lösen</button>
-    </div>
-    <div class="symbols" id="symbols" aria-label="Sonderzeichen"></div>
     <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    <div class="fx-row">
+      <button class="write-btn" id="goWrite">✎ Schreiben</button>
+      <div class="symbols" id="symbols" aria-label="Sonderzeichen"></div>
+    </div>
   </section>
-
-  <main class="ws" id="ws"><div class="pages" id="pages"></div></main>
 
   <footer class="status">
     <span id="stPages">Seite 1 von 1</span><span id="stTasks">0 Aufgaben</span><span id="stSaved"></span>
     <span class="sp"></span>
     <button id="stOut" aria-label="Verkleinern">−</button><span id="stZoom" class="num">100 %</span><button id="stIn" aria-label="Vergrössern">+</button>
   </footer>
+</div>
+<div class="zone" id="zone" hidden>
+  <span class="zone-tag" id="zoneTag">Hier schreiben</span>
+  <textarea id="inp" rows="2" enterkeyhint="done" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Aufgabe auf das Blatt schreiben" placeholder="Hier mit dem Stift schreiben … z. B. geg.: a = 6 cm, b = 7 cm, γ = 60°  ges.: Fläche"></textarea>
+  <button class="zone-go" id="solve">Lösen</button>
 </div>
 <input type="file" id="fileIn" accept=".json,.rechenheft,application/json" hidden>
 
@@ -543,13 +563,14 @@ const Engine = (() => {
       if (depth === 0) {
         let hit = null;
         for (const sep of seps) { if (sep instanceof RegExp) { const m = s.slice(i).match(sep); if (m && m.index === 0) { hit = m[0]; break; } } else if (s.startsWith(sep, i)) { hit = sep; break; } }
+        if (hit && /^\s+$/.test(hit) && (/(sin|cos|tan)\s*$/i.test(cur) || /:\s*$/.test(cur) || !cur.trim())) hit = null;
         if (hit) { out.push(cur); cur = ''; i += hit.length - 1; continue; }
       }
       cur += c;
     }
     out.push(cur); return out.map(x => x.trim()).filter(Boolean);
   }
-  const SEPS = [';', '\n', /^,\s+/, /^\s+und\s+/i, /^\s+sowie\s+/i];
+  const SEPS = [';', '\n', /^,\s+/, /^\s+und\s+/i, /^\s+sowie\s+/i, /^\s+(?=[A-Za-zäöüα-ωΑ-Ω][A-Za-z0-9]{0,5}\s*=)/];
   const NAME_MAP = { 'α': 'alpha', 'β': 'beta', 'γ': 'gamma', 'alpha': 'alpha', 'beta': 'beta', 'gamma': 'gamma', 'alfa': 'alpha', 'φ': 'phi', 'phi': 'phi' };
 
   function parseTask(raw) {
@@ -750,6 +771,9 @@ const Engine = (() => {
 
   function solveTriangle(T, out) {
     const K = {}; const givenList = []; let unit = ''; let areaName = 'A'; let right = false;
+    const isLen = a => a && !a.err && (!a.unit || /^(mm|cm|dm|m|km)$/.test(a.unit));
+    const pre = T.gItems.map(parseAssign);
+    const upperSides = pre.some(a => a && (a.name === 'B' || a.name === 'C') && isLen(a));
     for (const it of T.gItems) {
       if (/rechtwinklig/i.test(it)) { right = true; const m = it.match(/(α|β|γ|alpha|beta|gamma)\s*=\s*90/i); if (!m) continue; }
       if (/dreieck/i.test(it) && !/=/.test(it)) continue;
@@ -757,6 +781,8 @@ const Engine = (() => {
       if (!a) throw new NotUnderstood('Angabe nicht verstanden: «' + it + '»');
       if (a.err) throw new NotUnderstood(a.err + ' in «' + it + '»');
       let n = a.name; if (n === 'F') { n = 'A'; areaName = 'F'; }
+      if (upperSides && ['A', 'B', 'C'].includes(n) && isLen(a)) n = n.toLowerCase();
+      if (a.unit && /^grad$/i.test(a.unit)) a.unit = '';
       if (n === 'h' ) n = 'hc';
       if (!TRI_NAMES.has(n) && !(n in NAME_MAP)) throw new NotUnderstood('Unbekannte Grösse «' + a.name + '». Dreieck: a, b, c, α, β, γ, A, U.');
       if (ANG.includes(n) && S.rad && !a.isDeg) a.val = a.val / DEG;
@@ -807,7 +833,7 @@ const Engine = (() => {
         if (targets.every(t => K[t] !== undefined)) break;
         const cand = triangleRules(K, ctx);
         if (!cand.length) break;
-        const c = cand[0];
+        const c = cand.find(x => targets.includes(x.n)) || cand[0];
         K[c.n] = c.v; der[c.n] = c;
         if (c.branch && !branchInfo) branchInfo = { K: Object.assign({}, K, { [c.n]: c.branch.v }), der: Object.assign({}, der), c };
       }
@@ -1533,10 +1559,10 @@ const Engine = (() => {
     let s = null, c = null, t = null, a = null; let quad = 1; const gl = [];
     for (const it of T.gItems) {
       const low = it.toLowerCase();
+      let m = it.match(/(sin|cos|tan)\s*\(?\s*(α|alpha|x|β|beta)\s*\)?\s*=\s*([-−0-9.,/√()]+)/i);
+      if (m) { const v = evalE(parseExpr(m[3])); if (m[1] === 'sin') s = v; else if (m[1] === 'cos') c = v; else t = v; gl.push(`${m[1]} α = ${D(v, 6)}`); if (/stumpf/i.test(it)) { quad = 2; gl.push('α stumpf'); } else if (/spitz/i.test(it)) gl.push('α spitz'); continue; }
       if (/stumpf|90°\s*<\s*α\s*<\s*180°/.test(low)) { quad = 2; gl.push(it); continue; }
       if (/spitz/.test(low)) { quad = 1; gl.push(it); continue; }
-      let m = it.match(/^\s*(sin|cos|tan)\s*\(?\s*(α|alpha|x|β|beta)\s*\)?\s*=\s*(.+)$/i);
-      if (m) { const v = evalE(parseExpr(m[3])); if (m[1] === 'sin') s = v; else if (m[1] === 'cos') c = v; else t = v; gl.push(`${m[1]} α = ${D(v, 6)}`); continue; }
       const as = parseAssign(it); if (as && !as.err && ['alpha', 'x', 'beta'].includes(as.name)) { a = as.val; gl.push(`α = ${deg(a)}`); continue; }
       gl.push(it);
     }
@@ -1652,7 +1678,7 @@ const Engine = (() => {
     const names = T.gItems.map(it => { const a = parseAssign(it); return a && a.name; }).filter(Boolean);
     if (/\b(kg|km\/h|m\/s|newton|joule|watt)\b|\d\s*(n|j|w|s)\b/i.test(txt)) throw new NotUnderstood('Das ist Physik (z. B. Masse, Beschleunigung). Die App enthält nur deinen Mathe-Stoff.');
     if (names.includes('n') && names.includes('k')) return 'kombi';
-    if (/dreieck|rechtwinklig/.test(txt) || (names.length && names.some(n => TRI_NAMES.has(n) || n === 'alpha' || n === 'beta' || n === 'gamma'))) return 'tri';
+    if (/dreieck|rechtwinklig/.test(txt) || (names.length && names.some(n => TRI_NAMES.has(n) || TRI_NAMES.has(n.toLowerCase()) || n === 'alpha' || n === 'beta' || n === 'gamma'))) return 'tri';
     if (/^\s*(berechne|rechne)/.test(txt) || (!/[a-wyz]/i.test(txt.replace(/sin|cos|tan|sqrt|pi|arc/g, '')) && /[0-9]/.test(txt))) {
       const m = txt.match(/^\s*(berechne|rechne)?\s*:?\s*(sin|cos|tan)\s*\(\s*([0-9.]+)\s*°?\s*\)\s*=?\s*\??\s*$/);
       if (m && [15, 75, 105, 165, 195, 255, 285].includes(+m[3])) return 'addth';
@@ -1876,7 +1902,7 @@ const Hand = (() => {
       const needTop = Math.max(box.asc, sz * 1.1);
       let base = y + Math.max(needTop, lh * 0.72);
       if (base + box.desc > limit) { newPage(); base = y + Math.max(needTop, lh * 0.72); }
-      page.ops.push(...shift(box.ops, x, base));
+      page.ops.push(...shift(box.ops, x, base).map(o => { o.id = itemId; return o; }));
       const bottom = base + Math.max(box.desc, lh * 0.28);
       const hitTop = y;
       y = bottom;
@@ -1904,7 +1930,15 @@ const Hand = (() => {
     });
     // Seitenzahlen
     pages.forEach(p => { if (pages.length > 1) { const b = layout(parse(String(p.num)), sz * 0.8, rng(p.num * 99)); p.ops.push(...shift(b.ops, PAGE_W / 2 - b.w / 2, PAGE_H - 9)); } });
-    return pages.map(p => ({ num: p.num, hits: p.hits, strokes: opsToStrokes(p.ops) }));
+    const end = { page: pages.length - 1, y };
+    const out = pages.map(p => {
+      const groups = {};
+      for (const o of p.ops) { const k = o.id == null ? '_' : o.id; (groups[k] = groups[k] || []).push(o); }
+      const g2 = {}; Object.keys(groups).forEach(k => { g2[k] = opsToStrokes(groups[k]); });
+      return { num: p.num, hits: p.hits, strokes: opsToStrokes(p.ops), groups: g2 };
+    });
+    out.end = end; out.lh = lh; out.sz = sz;
+    return out;
   }
   function opsToStrokes(ops) {
     const out = [];
@@ -1921,7 +1955,7 @@ const Hand = (() => {
     return L;
   }
   const MARGIN_X = M.left - 4;
-  return { layoutDoc, paperLines, PAGE_W, PAGE_H, SIZES, hashStr, MARGIN_X };
+  return { layoutDoc, paperLines, PAGE_W, PAGE_H, SIZES, hashStr, MARGIN_X, M };
 })();
 
 // =====================================================================
@@ -2072,10 +2106,12 @@ const Export = (() => {
   const SYMBOLS = ['α', 'β', 'γ', '°', '²', '³', '^', '√', 'π', '·', '−', '/', '(', ')', ';', '=', '≤', '<', '[', ']', 'geg.: ', 'ges.: ', 'Löse: '];
   const INK_CSS = { blue: '#1B2A6B', black: '#1A1A1A', pencil: '#55595F' };
 
+  const inp = $('inp');
   let state = load() || sample();
   let past = [], future = [];
   let selected = null, editing = null, zoom = 'fit';
   let layout = [];
+  let animateId = null;
 
   function uid() { return Math.random().toString(36).slice(2, 10); }
   function sample() {
@@ -2137,11 +2173,14 @@ const Export = (() => {
       bg = `<path d="${Hand.paperLines(st.paper, st.size).map(l => `M${l[0][0]} ${l[0][1]}L${l[1][0]} ${l[1][1]}`).join('')}" stroke="#9EC4E6" stroke-width="${st.paper === 'grid' ? 0.12 : 0.18}" fill="none"/>`;
       if (st.paper === 'grid') bg += `<path d="M${Hand.MARGIN_X} 10V287" stroke="#D97373" stroke-width="0.2" fill="none"/>`;
     }
-    let d = '';
-    for (const s of p.strokes) { if (!s.length) continue; d += 'M' + s[0][0].toFixed(2) + ' ' + s[0][1].toFixed(2); if (s.length === 1) d += 'l0.05 0'; for (let i = 1; i < s.length; i++) d += 'L' + s[i][0].toFixed(2) + ' ' + s[i][1].toFixed(2); }
+    const pathD = list => { let d = ''; for (const s of list) { if (!s.length) continue; d += 'M' + s[0][0].toFixed(2) + ' ' + s[0][1].toFixed(2); if (s.length === 1) d += 'l0.05 0'; for (let i = 1; i < s.length; i++) d += 'L' + s[i][0].toFixed(2) + ' ' + s[i][1].toFixed(2); } return d; };
+    const groups = p.groups || { _: p.strokes };
+    const rest = []; Object.keys(groups).forEach(k => { if (k !== animateId) rest.push(...groups[k]); });
+    const d = pathD(rest);
+    const dNew = animateId && groups[animateId] ? pathD(groups[animateId]) : '';
     const hits = p.hits.map(h => `<rect class="hit${h.id === selected ? ' on' : ''}" data-id="${h.id}" x="${Hand.MARGIN_X - 2}" y="${(h.y0).toFixed(2)}" width="${210 - Hand.MARGIN_X - 8}" height="${Math.max(4, h.y1 - h.y0).toFixed(2)}" rx="1.5"><title>Antippen zum Auswählen</title></rect>`).join('');
     const brk = p.hits.filter(h => h.isBreak).map(h => `<text x="105" y="${(h.y0 + 3).toFixed(1)}" font-size="2.6" fill="#8A96A8" text-anchor="middle" font-family="IBM Plex Sans, sans-serif">Seitenumbruch</text>`).join('');
-    return `<svg viewBox="0 0 210 297" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Seite ${idx + 1}">${bg}<path d="${d}" stroke="${INK_CSS[st.ink] || INK_CSS.blue}" stroke-width="${strokeW()}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>${brk}${hits}</svg>`;
+    return `<svg viewBox="0 0 210 297" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Seite ${idx + 1}">${bg}<path d="${d}" stroke="${INK_CSS[st.ink] || INK_CSS.blue}" stroke-width="${strokeW()}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>${dNew ? `<path class="draw" d="${dNew}" stroke="${INK_CSS[st.ink] || INK_CSS.blue}" stroke-width="${strokeW()}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` : ''}${brk}${hits}</svg>`;
   }
   function pageWidthPx() {
     const avail = $('ws').clientWidth - 32;
@@ -2162,12 +2201,44 @@ const Export = (() => {
     layout = Hand.layoutDoc(items, { size: st.size });
     const w = pageWidthPx();
     const html = layout.map((p, i) => `<div class="page" style="width:${w}px">${pageSvg(p, i)}</div>`).join('');
-    $('pages').innerHTML = state.items.length ? html : html + '';
+    const zone = $('zone'); if (zone.parentNode) zone.parentNode.removeChild(zone);
+    // Platz für die Schreibzone: 3 Zeilen
+    const zoneH = layout.lh * 3.2;
+    let zPage = layout.end.page, zTop = layout.end.y + (state.items.length ? layout.sz * 1.4 : 0);
+    let extra = '';
+    if (zTop + zoneH > Hand.PAGE_H - Hand.M.bottom) { zPage = layout.length; zTop = Hand.M.top; extra = `<div class="page" style="width:${w}px">${pageSvg({ strokes: [], hits: [], groups: {} }, layout.length)}</div>`; }
+    $('pages').innerHTML = html + extra;
+    const host = $('pages').children[zPage];
+    host.appendChild(zone); zone.hidden = false;
+    const pxmm = w / 210;
+    zone.style.left = ((Hand.M.left - 3) / 210 * 100) + '%';
+    zone.style.right = ((Hand.M.right - 3) / 210 * 100) + '%';
+    zone.style.top = (zTop / 297 * 100) + '%';
+    inp.style.fontSize = (layout.sz * 1.55 * pxmm) + 'px';
+    inp.style.lineHeight = (layout.lh * pxmm) + 'px';
+    inp.style.minHeight = (zoneH * pxmm) + 'px';
+    $('zoneTag').textContent = editing ? 'Bearbeiten: ' + ($('selName').textContent || 'Aufgabe') : noteMode ? 'Notiz schreiben' : 'Hier schreiben';
+    $('solve').textContent = editing ? 'Übernehmen' : noteMode ? 'Einfügen' : 'Lösen';
+    autoGrow();
+    runAnimation();
     const tasks = state.items.filter(i => i.type === 'task').length;
     $('stPages').textContent = `Seite ${layout.length > 1 ? '1–' + layout.length : '1'} von ${layout.length}`;
     $('stTasks').textContent = `${tasks} ${tasks === 1 ? 'Aufgabe' : 'Aufgaben'}${state.sample ? ' · Beispiele (Datei › Neu leert das Blatt)' : ''}`;
     $('stZoom').textContent = zoom === 'fit' ? 'Seitenbreite' : Math.round(zoom * 100) + ' %';
     updateSelBar(items);
+  }
+  function runAnimation() {
+    if (!animateId) return;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelectorAll('path.draw').forEach((p, i) => {
+      if (reduce) return;
+      let len = 0; try { len = p.getTotalLength(); } catch (e) { return; }
+      const dur = Math.min(4.5, Math.max(1.2, len / 260));
+      p.style.strokeDasharray = len + ' ' + len; p.style.strokeDashoffset = len; p.style.setProperty('--dur', dur + 's');
+      p.getBoundingClientRect();
+      requestAnimationFrame(() => requestAnimationFrame(() => { p.style.strokeDashoffset = '0'; }));
+    });
+    animateId = null;
   }
   function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v))); }
   function applyTheme() { const t = state.settings.theme; if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); else if (document.documentElement.hasAttribute('data-theme') && window.__themeByApp) document.documentElement.removeAttribute('data-theme'); window.__themeByApp = t === 'light' || t === 'dark'; }
@@ -2188,35 +2259,35 @@ const Export = (() => {
     updateSelBar();
   });
   $('pages').addEventListener('dblclick', e => { const r = e.target.closest('.hit'); if (r) { selected = r.dataset.id; startEdit(); } });
-  $('sClose').onclick = () => { selected = null; editing = null; $('solve').textContent = 'Lösen'; render(); };
+  $('sClose').onclick = () => { selected = null; if (editing) inp.value = ''; editing = null; render(); };
   $('sDel').onclick = () => { const id = selected; commit(() => { state.items = state.items.filter(i => i.id !== id); }); selected = null; updateSelBar(); toast('Gelöscht', 'Rückgängig', undo); };
   $('sUp').onclick = () => move(-1); $('sDown').onclick = () => move(1);
   function move(dir) { const i = state.items.findIndex(x => x.id === selected); const j = i + dir; if (i < 0 || j < 0 || j >= state.items.length) return; commit(() => { const a = state.items; [a[i], a[j]] = [a[j], a[i]]; }); }
   $('sEdit').onclick = startEdit;
-  function startEdit() { const it = state.items.find(i => i.id === selected); if (!it || !(it.type === 'task' || it.type === 'text')) return; editing = it.id; $('inp').value = it.input; $('solve').textContent = 'Übernehmen'; autoGrow(); $('inp').focus(); msg(it.type === 'text' ? 'Notiz bearbeiten' : 'Aufgabe bearbeiten, dann «Übernehmen»', true); }
+  function startEdit() { const it = state.items.find(i => i.id === selected); if (!it || !(it.type === 'task' || it.type === 'text')) return; editing = it.id; render(); inp.value = it.input; autoGrow(); focusZone(); msg(it.type === 'text' ? 'Notiz bearbeiten, dann «Übernehmen»' : 'Aufgabe bearbeiten, dann «Übernehmen»', true); }
+  function focusZone() { const z = $('zone'); z.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); setTimeout(() => inp.focus({ preventScroll: true }), 250); }
 
   // ---- Eingabe ----
-  const inp = $('inp');
-  function autoGrow() { inp.style.height = 'auto'; inp.style.height = Math.min(132, inp.scrollHeight + 2) + 'px'; }
+  function autoGrow() { inp.style.height = 'auto'; inp.style.height = inp.scrollHeight + 2 + 'px'; }
   inp.addEventListener('input', autoGrow);
   inp.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
-    if (e.key === 'Escape' && editing) { editing = null; inp.value = ''; $('solve').textContent = 'Lösen'; autoGrow(); msg(''); }
+    if (e.key === 'Escape' && (editing || noteMode)) { editing = null; noteMode = false; inp.value = ''; render(); msg(''); }
   });
   $('solve').onclick = submit;
   function msg(t, ok) { const m = $('msg'); m.textContent = t; m.classList.toggle('ok', !!ok); }
   function nextNumber() { let n = 0; for (const it of state.items) { if (it.type !== 'task') continue; const num = numberOf(it); n = num && /^\d+$/.test(num) ? +num : n + 1; } return n + 1; }
-  function submit() {
+  async function submit() {
     const raw = inp.value.trim(); if (!raw) { msg('Schreibe eine Aufgabe, z. B. «geg.: a = 7 cm, b = 5 cm, γ = 40° ges.: c».'); return; }
     if (editing) {
       const it = state.items.find(i => i.id === editing);
       if (it && it.type === 'task') { const r = Engine.solveTask(raw, state.settings); if (!r.ok) { msg(r.error); return; } }
-      commit(() => { it.input = raw; }); editing = null; $('solve').textContent = 'Lösen'; inp.value = ''; autoGrow(); msg('Aktualisiert', true); return;
+      editing = null; animateId = it.id; inp.value = ''; commit(() => { it.input = raw; }); msg('Aktualisiert', true); return;
     }
-    if (noteMode) { commit(() => insertItems([{ id: uid(), type: 'text', input: raw }])); noteMode = false; setNoteMode(false); inp.value = ''; autoGrow(); msg('Notiz eingefügt', true); return; }
+    if (noteMode) { const nid = uid(); noteMode = false; inp.value = ''; animateId = nid; commit(() => insertItems([{ id: nid, type: 'text', input: raw }])); msg('Notiz eingefügt', true); return; }
     // mehrere Aufgaben auf einmal (neue Zeile + «Aufgabe n»)
     const parts = raw.split(/\n(?=\s*(?:aufgabe|aufg\.?)\s*\d)/i).map(s => s.trim()).filter(Boolean);
-    const newItems = []; let n = nextNumber();
+    const newItems = []; let n = state.sample ? 1 : nextNumber();
     for (const p of parts) {
       const r = Engine.solveTask(p, state.settings);
       if (!r.ok) { msg((parts.length > 1 ? `«${p.slice(0, 40)}…»: ` : '') + r.error); if (!newItems.length) return; break; }
@@ -2225,8 +2296,11 @@ const Export = (() => {
       n = hasNum ? (parseInt((p.match(/\d+/) || [n])[0], 10) + 1) : n + 1;
     }
     const wasSample = state.sample;
-    commit(() => { if (wasSample) state.items = []; insertItems(newItems); });
-    inp.value = ''; autoGrow();
+    const zone = $('zone'); zone.classList.add('sink');
+    await new Promise(r => setTimeout(r, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 420));
+    zone.classList.remove('sink'); inp.value = '';
+    animateId = newItems[newItems.length - 1].id;
+    commit(() => { if (wasSample) { state.items = []; state.title = 'Mathe Hausaufgaben'; } insertItems(newItems); });
     const last = newItems[newItems.length - 1]; const res = Engine.solveTask(last.input, state.settings);
     msg(res.unsolvable ? `${newItems.length > 1 ? newItems.length + ' Aufgaben eingefügt. ' : ''}Eingetragen als «nicht lösbar», es fehlen Angaben.` : `${newItems.length > 1 ? newItems.length + ' Aufgaben' : 'Aufgabe'} gelöst und eingetragen.`, !res.unsolvable);
     if (wasSample) toast('Beispiele entfernt, dein Blatt beginnt jetzt', 'Rückgängig', undo);
@@ -2238,7 +2312,8 @@ const Export = (() => {
   }
   function scrollToItem(id) { const r = document.querySelector(`.hit[data-id="${id}"]`); if (r) r.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }
   let noteMode = false;
-  function setNoteMode(on) { noteMode = on; $('solve').textContent = on ? 'Notiz einfügen' : 'Lösen'; inp.placeholder = on ? 'Text, der in deiner Handschrift aufs Blatt kommt' : 'Aufgabe 1: geg.: a = 7 cm, b = 5 cm, γ = 40°  ges.: c, α, A'; }
+  const PH = inp.placeholder;
+  function setNoteMode(on) { noteMode = on; inp.placeholder = on ? 'Text, der ohne Rechnung in deiner Handschrift aufs Blatt kommt' : PH; $('zoneTag').textContent = on ? 'Notiz schreiben' : 'Hier schreiben'; $('solve').textContent = on ? 'Einfügen' : 'Lösen'; }
 
   // Sonderzeichen
   $('symbols').innerHTML = SYMBOLS.map(s => `<button type="button" data-s="${s}">${s.trim()}</button>`).join('');
@@ -2267,10 +2342,11 @@ const Export = (() => {
   let newArmed = null;
   $('bNew').onclick = () => {
     if (!newArmed) { $('bNew').classList.add('warn'); $('bNewLbl').textContent = 'Wirklich leeren?'; newArmed = setTimeout(disarm, 3500); return; }
-    disarm(); commit(() => { state.items = []; state.title = 'Mathe Hausaufgaben'; }); selected = null; toast('Neues leeres Blatt', 'Rückgängig', undo); inp.focus();
+    disarm(); commit(() => { state.items = []; state.title = 'Mathe Hausaufgaben'; }); selected = null; toast('Neues leeres Blatt', 'Rückgängig', undo); focusZone();
   };
   function disarm() { clearTimeout(newArmed); newArmed = null; $('bNew').classList.remove('warn'); $('bNewLbl').textContent = 'Neu'; }
-  $('bNote').onclick = () => { setNoteMode(true); inp.focus(); msg('Notiz-Modus: Text wird ohne Rechnung in deiner Handschrift eingefügt.', true); };
+  $('bNote').onclick = () => { setNoteMode(true); focusZone(); msg('Notiz-Modus: Text kommt ohne Rechnung aufs Blatt.', true); };
+  $('goWrite').onclick = focusZone;
   $('bGap').onclick = () => commit(() => insertItems([{ id: uid(), type: 'gap' }]));
   $('bBreak').onclick = () => commit(() => insertItems([{ id: uid(), type: 'break' }]));
   $('zIn').onclick = $('stIn').onclick = () => { zoom = Math.min(2, (zoom === 'fit' ? pageWidthPx() / (210 * 96 / 25.4) : zoom) + 0.1); render(); };
@@ -2287,7 +2363,7 @@ const Export = (() => {
     menuEl.innerHTML = EXAMPLES.map(([h, list]) => `<h4>${h}</h4>` + list.map(([n, t]) => `<button data-t="${t.replace(/"/g, '&quot;')}">${n}<small>${t}</small></button>`).join('')).join('');
     document.body.appendChild(menuEl);
     const r = $('bExamples').getBoundingClientRect(); menuEl.style.left = Math.max(16, Math.min(r.left, innerWidth - menuEl.offsetWidth - 16)) + 'px'; menuEl.style.top = (r.bottom + 4) + 'px';
-    menuEl.addEventListener('click', ev => { const b = ev.target.closest('button'); if (!b) return; setNoteMode(false); inp.value = b.dataset.t; autoGrow(); inp.focus(); closeMenu(); msg('Vorlage eingesetzt: anpassen und «Lösen» tippen.', true); });
+    menuEl.addEventListener('click', ev => { const b = ev.target.closest('button'); if (!b) return; setNoteMode(false); inp.value = b.dataset.t; autoGrow(); focusZone(); closeMenu(); msg('Vorlage eingesetzt: anpassen und «Lösen» tippen.', true); });
     setTimeout(() => document.addEventListener('click', function h(ev) { if (menuEl && !menuEl.contains(ev.target) && ev.target !== $('bExamples')) { closeMenu(); document.removeEventListener('click', h); } }), 0);
   };
 
@@ -2298,14 +2374,14 @@ const Export = (() => {
     el.innerHTML = `<div class="help-card" role="dialog" aria-label="Eingabe-Hilfe"><button class="close">Schliessen</button>
       <h2>So schreibst du Aufgaben</h2>
       <p>Schreibe die Angaben nach <code>geg.:</code> und die gesuchten Grössen nach <code>ges.:</code>. Trenne Angaben mit Komma und Leerzeichen oder mit Semikolon. Dezimalkomma geht: <code>7,5 cm</code>.</p>
-      <p>Mit dem Apple Pencil kannst du direkt ins Eingabefeld schreiben (Scribble). Griechische Buchstaben und ² findest du in der Zeichenleiste, oder du schreibst <code>gamma</code> und <code>x^2</code>.</p>
+      <p>Schreib mit dem Apple Pencil direkt in das gestrichelte Feld auf dem Blatt. Das iPad erkennt deine Schrift (Scribble), dann tippst du «Lösen» und die App schreibt Rechenweg und Lösung in deiner Handschrift darunter. Griechische Buchstaben und ² findest du in der Zeichenleiste, oder du schreibst <code>gamma</code> und <code>x^2</code>.</p>
       <p>Mehrere Aufgaben auf einmal: jede auf eine neue Zeile mit «Aufgabe 1», «Aufgabe 2» … (Zeilenumbruch mit Shift + Enter).</p>
       <p>Fehlen Angaben, schreibt die App den Rechenweg bis dahin, nennt was fehlt und unterstreicht «nicht lösbar» doppelt.</p>
       ${EXAMPLES.map(([h, list]) => `<h3>${h}</h3>` + list.map(([n, t]) => `<button class="ex" data-t="${t.replace(/"/g, '&quot;')}">${t}</button>`).join('')).join('')}
       <h3>Grenzen</h3>
       <p>Textaufgaben («Ein Zug fährt …») wandelt die App offline nicht um. Physik-Formeln sind nicht enthalten, nur dein Mathe-Stoff (Prüfungen 1, 2 und Diplom).</p></div>`;
     document.body.appendChild(el);
-    el.addEventListener('click', ev => { if (ev.target === el || ev.target.classList.contains('close')) el.remove(); const b = ev.target.closest('.ex'); if (b) { setNoteMode(false); inp.value = b.dataset.t; autoGrow(); el.remove(); inp.focus(); } });
+    el.addEventListener('click', ev => { if (ev.target === el || ev.target.classList.contains('close')) el.remove(); const b = ev.target.closest('.ex'); if (b) { setNoteMode(false); inp.value = b.dataset.t; autoGrow(); el.remove(); focusZone(); } });
   }
 
   // ---- Dateien ----
