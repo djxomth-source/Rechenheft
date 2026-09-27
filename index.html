@@ -2066,7 +2066,7 @@ const Export = (() => {
 // =====================================================================
 (() => {
   const $ = id => document.getElementById(id);
-  const KEY = 'rechenheft.v1';
+  const KEY = 'rechenheft.v2';
   const EXAMPLES = [
     ['Dreiecke', [
       ['Cosinussatz + Flächensatz', 'geg.: a = 7 cm, b = 5 cm, γ = 40° ges.: c, α, A'],
@@ -2116,14 +2116,9 @@ const Export = (() => {
   function uid() { return Math.random().toString(36).slice(2, 10); }
   function sample() {
     return {
-      title: 'Beispiel · Mathe Hausaufgaben', sample: true,
+      title: 'Mathe Hausaufgaben', sample: false,
       settings: { dec: 2, sep: ',', rad: false, size: 'M', ink: 'blue', paper: 'grid', theme: 'system' },
-      items: [
-        { id: uid(), type: 'task', input: 'Aufgabe 1: geg.: a = 7 cm, b = 5 cm, γ = 40° ges.: c, α, A' },
-        { id: uid(), type: 'task', input: 'Aufgabe 2: f(x) = 2x² − 8x + 6 ges.: Nullstellen, Scheitelpunkt' },
-        { id: uid(), type: 'task', input: 'Aufgabe 3: Löse: 2cos²(x) − cos(x) − 1 = 0' },
-        { id: uid(), type: 'task', input: 'Aufgabe 4: geg.: a = 5 cm, b = 7 cm ges.: c' },
-      ],
+      items: [],
     };
   }
   function load() { try { const s = localStorage.getItem(KEY); if (!s) return null; const d = JSON.parse(s); if (!d || !Array.isArray(d.items)) return null; d.settings = Object.assign(sample().settings, d.settings || {}); return d; } catch (e) { return null; } }
