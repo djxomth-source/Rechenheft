@@ -742,7 +742,7 @@ const Engine = (() => {
         }
         if (has(x) && !has(X)) {
           const sv = K[x] * sinD(K[Y]) / K[y];
-          if (sv > 1 + 1e-12) throw new Unsolvable(`Kein Dreieck möglich: sin ${G[X]} = ${D(sv, 4)} > 1.`);
+          if (sv > 1 + 1e-12) throw new Unsolvable(`Sinussatz: sin ${G[X]} = \\frac{${x} · sin ${G[Y]}}{${y}} = \\frac{${Zs(K[x])} · sin(${deg(K[Y])})}{${Zs(K[y])}} ≈ ${D(sv, 4)}\nsin ${G[X]} > 1 ⇒ kein Dreieck möglich`);
           const v1 = asinD(Math.min(1, sv)); const v2 = 180 - v1;
           const lines = [`\\frac{sin ${G[X]}}{${x}} = \\frac{sin ${G[Y]}}{${y}} ⇒ sin ${G[X]} = \\frac{${x} · sin ${G[Y]}}{${y}}`, `sin ${G[X]} = \\frac{${Zs(K[x])} · sin(${deg(K[Y])})}{${Zs(K[y])}} ${rel(sv, 4)} ${D(sv, 4)}`, `${G[X]} = arcsin(${D(sv, 4)})`];
           const c = { n: X, v: v1, deps: [x, y, Y], title: 'Sinussatz', lines, res: eqRes(X, v1) };
@@ -1710,7 +1710,7 @@ const Engine = (() => {
     const T = parseTask(input);
     const out = new Out();
     const title = T.title;
-    if (T.raw.split(/\s+/).length > 18 && !/gegeben|geg\.|gesucht|ges\./i.test(T.raw) && !/=/.test(T.raw)) {
+    if (!S.ink && T.raw.split(/\s+/).length > 18 && !/gegeben|geg\.|gesucht|ges\./i.test(T.raw) && !/=/.test(T.raw)) {
       return { ok: false, error: 'Das sieht nach einer Textaufgabe aus. Die kann die App offline nicht umwandeln. Schreibe die Angaben als «geg.: … ges.: …».' };
     }
     try {
@@ -1743,10 +1743,10 @@ const Engine = (() => {
     } catch (e) {
       if (e instanceof Unsolvable) {
         if (!out.lines.some(l => l.k === 'geg')) { out.geg(T.gItems.join(';  ') || '—'); out.ges(T.sItems.join(';  ') || '?'); }
-        out.l(e.message);
+        String(e.message).split('\n').forEach(t => out.l(t));
         if (e.hint) out.l(e.hint);
         out.res(uu('nicht lösbar'));
-        return { ok: true, title, lines: out.lines, unsolvable: true };
+        return { ok: true, title, lines: out.lines, unsolvable: true, missing: !!e.hint };
       }
       return { ok: false, error: e.message || String(e) };
     }
@@ -1874,6 +1874,24 @@ const Reco = (() => {
     }
     return lines.sort((a, b) => a.cy - b.cy);
   }
+  function splitColumns(lines, Href) {
+    const segs = [];
+    for (const L of lines) {
+      const its = L.items.slice().sort((a, b) => a.b.x0 - b.b.x0);
+      let cur = [its[0]], x1 = its[0].b.x1;
+      for (let i = 1; i < its.length; i++) {
+        if (its[i].b.x0 - x1 > 1.8 * Href) { segs.push(cur); cur = []; }
+        cur.push(its[i]); x1 = Math.max(x1, its[i].b.x1);
+      }
+      segs.push(cur);
+    }
+    const out = segs.map(items => { const cys = items.map(it => (it.b.y0 + it.b.y1) / 2); return { items, cys, cy: pct(cys, 0.5), x0: Math.min(...items.map(it => it.b.x0)) }; });
+    // Spalten: Segmente, die deutlich rechts beginnen, bilden eine eigene Spalte
+    const xs = out.map(o => o.x0).sort((a, b) => a - b);
+    const cols = []; for (const x of xs) { if (!cols.length || x - cols[cols.length - 1].x > 6 * Href) cols.push({ x }); }
+    const colOf = o => { let k = 0; cols.forEach((c, i) => { if (o.x0 >= c.x - 0.5 * Href) k = i; }); return k; };
+    return out.sort((a, b) => colOf(a) - colOf(b) || a.cy - b.cy);
+  }
   function makeAtoms(items, H, base) {
     const n = items.length; const par = items.map((_, i) => i);
     const f = i => (par[i] === i ? i : (par[i] = f(par[i])));
@@ -1917,20 +1935,19 @@ const Reco = (() => {
     for (const it of line.items) { it.s = it.s.map(p => [p[0], p[1] - k * p[0]]); it.b = bbox([it.s]); }
   }
   function lineStats(line, Href) {
-    applySkew(line, deskew(line, Href));
+    // (keine Neigungskorrektur: Unterlängen verfälschen sie)
     const atoms = makeAtoms(line.items, Href);
     const main = atoms.filter(a => a.b.h > 0.3 * Href);
     const base = main.length ? pct(main.map(a => a.b.y1), 0.5) : pct(atoms.map(a => a.b.y1), 0.5);
     const onBase = main.filter(a => Math.abs(a.b.y1 - base) < 0.25 * Href).map(a => a.b.h);
     const med = onBase.length ? pct(onBase, 0.5) : Href;
-    const caps = onBase.filter(h => h > 1.5 * med);
-    return { base, med, capH: caps.length ? pct(caps, 0.5) : null };
+    const tall = onBase.length ? pct(onBase, 0.9) : Href;
+    return { base, med, tall, capH: onBase.length >= 2 && tall > 1.25 * med ? tall : null };
   }
   function recognizeLine(line, st, Hprior) {
     const base = st.base;
-    let H = st.capH;
-    if (!H) { const a = st.med, b = st.med / 0.52; H = Math.abs(Math.log(a / Hprior)) < Math.abs(Math.log(b / Hprior)) ? a : b; }
-    H = Math.min(1.3 * Hprior, Math.max(0.78 * Hprior, H));
+    let H = st.capH || st.tall;
+    H = Math.min(1.1 * Hprior, Math.max(0.95 * Hprior, H));
     let atoms = makeAtoms(line.items, H, base);
     const n = atoms.length; const best = new Array(n + 1).fill(Infinity); const back = new Array(n + 1); best[0] = 0;
     const cache = {};
@@ -1966,10 +1983,10 @@ const Reco = (() => {
     const items = strokes.filter(s => s.pts.length).map(s => ({ id: s.id, s: s.pts, b: bbox([s.pts]) }));
     if (!items.length) return { lines: [], H: 0 };
     const Href = opts.capH || pct(items.map(i => i.b.h), 0.8);
-    const lines = splitLines(items, Href);
+    const lines = splitColumns(splitLines(items, Href), Href);
     const stats = lines.map(L => lineStats(L, Href));
     const rel = stats.map(s => s.capH).filter(Boolean);
-    const Hprior = opts.capH || (rel.length ? pct(rel, 0.5) : Href);
+    const Hprior = opts.capH || (rel.length ? pct(rel, 0.75) : pct(stats.map(s => s.tall), 0.75));
     const res = lines.map((L, i) => recognizeLine(L, stats[i], Hprior));
     return { lines: res, H: Hprior };
   }
@@ -2594,9 +2611,9 @@ const Export = (() => {
     const idsKey = state.pending.slice().sort().join(',');
     if (state.textOverride && state.textOverride.ids === idsKey) raw = state.textOverride.lines;
     const task = TaskText.build(raw);
-    const r = Engine.solveTask(task, { dec: state.settings.dec, sep: state.settings.sep, rad: state.settings.rad });
+    const r = Engine.solveTask(task, { dec: state.settings.dec, sep: state.settings.sep, rad: state.settings.rad, ink: true });
     const hasSought = /\bges\b|gesucht|^\s*Löse|^\s*(berechne|additionstheorem)/im.test(task) || (r.ok && ['eq', 'calc', 'addth'].includes(r.kind));
-    recoResult = { res, lines, raw, task, r, ready: r.ok && !r.unsolvable && hasSought, hasSought };
+    recoResult = { res, lines, raw, task, r, ready: r.ok && hasSought && (!r.unsolvable || !r.missing), hasSought };
     renderDock();
     if (recoResult.ready) showBubble(); else hideBubble();
   }
@@ -2668,28 +2685,27 @@ const Export = (() => {
   }
 
   // ---------------- Dock: erkannte Zeichen ----------------
+  let dockOpen = false;
   function renderDock() {
     const d = $('dock'); const R = recoResult;
     if (!R) {
-      d.innerHTML = `<div class="hint">Schreib mit dem Stift direkt aufs Blatt, z. B. <b>geg: a = 6 cm, b = 7 cm, γ = 60°</b> und darunter <b>ges: A</b>. Sobald alles da ist, erscheint beim Stift <b>«Auflösen?»</b>. Mit dem Finger scrollst du.</div>`;
+      d.innerHTML = `<div class="dock-head"><span class="hint">Schreib mit dem Stift aufs Blatt: <b>geg: …</b> und <b>ges: …</b>. Wenn alles da ist, erscheint beim Stift <b>«Auflösen?»</b>.</span></div>`;
       return;
     }
     let status;
-    if (R.ready) status = `<span class="state-ok">Bereit: tippe «Auflösen?» beim Stift</span>`;
-    else if (!R.r.ok) status = `<span class="state-no">${esc(R.r.error)}</span>`;
-    else if (!R.hasSought) status = `<span class="state-no">Es fehlt noch «ges: …»</span>`;
-    else { const why = R.r.lines.filter(l => l.k === 'step').map(l => l.t).join(' '); status = `<span class="state-no">Noch nicht lösbar: ${esc(plain(why))}</span>`; }
+    if (R.ready) status = `<span class="state-ok">✓ Gelesen, bereit zum Auflösen</span>`;
+    else if (!R.r.ok || !R.hasSought) status = `<span class="state-no">Noch nicht lesbar${R.hasSought ? '' : ': es fehlt «ges: …»'}</span>`;
+    else status = `<span class="state-no">Es fehlen noch Angaben</span>`;
     const lines = R.lines.map((l, li) => `<div class="rline">${l.map((c, ci) => c.space ? '<span class="chip sp"> </span>' : `<button class="chip${c.fixed ? ' fixed' : c.score > 2.6 ? ' weak' : ''}" data-l="${li}" data-c="${ci}" title="Antippen zum Korrigieren">${esc(c.ch)}</button>`).join('')}</div>`).join('');
     const override = state.textOverride && state.textOverride.ids === state.pending.slice().sort().join(',');
-    d.innerHTML = `<div class="dock-head"><b>Erkannt</b>${status}<span class="sp"></span>
-      <button class="small" id="dEdit">Text korrigieren</button>
-      ${R.r.ok && R.r.unsolvable && R.hasSought ? '<button class="small" id="dForce">Trotzdem eintragen</button>' : ''}
+    d.innerHTML = `<div class="dock-head">${status}<span class="hint" style="font-family:var(--font-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1">${esc(R.task.replace(/\n/g, ' · '))}</span>
+      <button class="small" id="dToggle">${dockOpen ? 'Schliessen' : 'Zeichen prüfen'}</button>
       ${R.ready ? '<button class="small primary" id="dSolve">Auflösen</button>' : ''}</div>
-      ${override ? `<div class="hint">Korrigierter Text: <b>${esc(R.raw.join(' / '))}</b></div>` : lines}
-      <div class="hint">Gelesen als: <span style="font-family:var(--font-mono)">${esc(R.task.replace(/\n/g, ' / '))}</span>. Falsches Zeichen? Antippen und richtig wählen, die App lernt deine Schrift daraus.</div>`;
+      ${dockOpen ? `${override ? `<div class="hint">Korrigierter Text: <b>${esc(R.raw.join(' / '))}</b></div>` : lines}
+      <div class="dock-head"><span class="hint">Falsch gelesenes Zeichen antippen und das richtige wählen. Die App lernt deine Schrift daraus.</span><span class="sp"></span><button class="small" id="dEdit">Ganzen Text korrigieren</button></div>` : ''}`;
     d.querySelectorAll('.chip[data-l]').forEach(b => b.addEventListener('click', () => openAlts(b, +b.dataset.l, +b.dataset.c)));
+    const e0 = $('dToggle'); if (e0) e0.onclick = () => { dockOpen = !dockOpen; renderDock(); };
     const e1 = $('dEdit'); if (e1) e1.onclick = openTextEdit;
-    const e2 = $('dForce'); if (e2) e2.onclick = () => solve(true);
     const e3 = $('dSolve'); if (e3) e3.onclick = () => solve(false);
   }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
